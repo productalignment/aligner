@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security issue
+    url: https://github.com/productalignment/aligner/security/advisories/new
+    about: Please report security issues privately, not in a public issue. You can also email hello@productalignment.org.
+  - name: Questions and anything else
+    url: https://productalignment.org
+    about: Visit productalignment.org, or email hello@productalignment.org.

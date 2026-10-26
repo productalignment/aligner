@@ -1,0 +1,25 @@
+{
+  "name": "aligner-monorepo",
+  "private": true,
+  "license": "MIT",
+  "homepage": "https://productalignment.org",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/productalignment/aligner.git"
+  },
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "test": "npm test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "build": "npm run build -w aligner",
+    "start": "node apps/web/dist/server.js",
+    "dev": "npm run dev -w aligner --",
+    "e2e": "npm run e2e -w aligner",
+    "screenshots": "npm run screenshots -w aligner",
+    "validate": "tsx apps/web/scripts/validate.ts"
+  }
+}

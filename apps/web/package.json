@@ -1,0 +1,48 @@
+{
+  "name": "aligner",
+  "version": "1.0.0",
+  "description": "Aligner: a simple, visual editor for the product context your AI coding agent builds from",
+  "private": true,
+  "license": "MIT",
+  "homepage": "https://productalignment.org",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/productalignment/aligner.git",
+    "directory": "apps/web"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "vite build && node scripts/build-server.mjs",
+    "start": "node dist/server.js",
+    "dev": "npm run build && tsx scripts/dev.ts",
+    "test": "npm run build && vitest run",
+    "typecheck": "tsc --noEmit",
+    "e2e": "npm run build && vitest run --config vitest.e2e.config.ts",
+    "screenshots": "npm run build && tsx scripts/screenshots.ts"
+  },
+  "dependencies": {
+    "@aligner/core": "0.2.0",
+    "@xyflow/react": "^12.12.0",
+    "clsx": "^2.1.1",
+    "elkjs": "^0.12.0",
+    "lucide": "^1.48.0",
+    "lucide-react": "^1.48.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^26.6.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "esbuild": "^0.28.2",
+    "playwright": "^1.56.1",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.1",
+    "vite-plugin-singlefile": "^2.3.3",
+    "vitest": "^5.0.2"
+  }
+}
