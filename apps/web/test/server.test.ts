@@ -5,13 +5,10 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
-import { createServer } from 'node:http';
-import type { AddressInfo } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { readFolder } from '@aligner/core';
 import { startAligner, type Harness } from '../e2e/harness';
 import { newer, releases } from '../src/updates';
-import { USAGE_URL, partOf, usageUrl } from '../src/usage';
 
 const SERVER = fileURLToPath(new URL('../dist/server.js', import.meta.url));
 const TIDY = fileURLToPath(new URL('../../../examples/tidy', import.meta.url));
@@ -99,7 +96,7 @@ describe('signing in with GitHub', () => {
     const pat = client(h.url);
     expect(await pat.go(`${h.url}/auth/login?to=${encodeURIComponent('/?repo=pat/tidy&branch=main')}`)).toBe(`${h.url}/?repo=pat/tidy&branch=main`);
     const account = await pat.rpc('account');
-    expect(account.result).toEqual({ stage: 'ready', user: { login: 'pat', name: 'Pat Doe', avatar: h.github.user.avatar_url }, install: `${h.github.web}/apps/aligner-test/installations/new`, durable: true, version: VERSION, usageStats: false });
+    expect(account.result).toEqual({ stage: 'ready', user: { login: 'pat', name: 'Pat Doe', avatar: h.github.user.avatar_url }, install: `${h.github.web}/apps/aligner-test/installations/new`, durable: true, version: VERSION });
   });
 
   it('goes back only to a page of this Aligner', async () => {
@@ -396,61 +393,5 @@ describe('a new version of Aligner', () => {
     expect(releases(changelog)[0]!.version).toBe(VERSION);
     expect(releases(CHANGELOG).map((r) => r.version)).toEqual(['99.0.0', '98.0.0', '0.1.0']);
     expect([newer('0.10.0', '0.9.0'), newer('0.9.0', '0.10.0'), newer('1.0.0', '1.0.0')]).toEqual([true, false, false]);
-  });
-});
-
-describe('usage statistics', () => {
-  it('go to productalignment.org unless the PM turns them off, or sends them elsewhere', () => {
-    expect(usageUrl(undefined)).toBe(USAGE_URL);
-    expect(usageUrl(' ')).toBe(USAGE_URL);
-    for (const off of ['off', 'OFF', 'false', '0', 'no']) expect(usageUrl(off)).toBeNull();
-    expect(usageUrl('https://stats.example.com/usage')).toBe('https://stats.example.com/usage');
-  });
-
-  it('count an edit for the part of the product it changes', () => {
-    expect(partOf({ op: 'modify', id: 'VI-FOR', fields: {} })).toBe('product');
-    expect(partOf({ op: 'add', type: 'job', parent: 'PE-001', fields: {} })).toBe('product');
-    expect(partOf({ op: 'remove', id: 'FS-104>FS-105' })).toBe('flows');
-    expect(partOf({ op: 'add', type: 'screen', on: 'FS-101', fields: {} })).toBe('screens');
-    expect(partOf({ op: 'remove', id: 'SC-002@10, 10, 5, 5>SC-003' })).toBe('screens');
-  });
-
-  it("tell the makers what PMs do, once a day for opening Aligner and for each part, with nothing that says who they are or what they work on", async () => {
-    const got: Record<string, string>[] = [];
-    const makers = createServer((req, res) => {
-      let body = '';
-      req.on('data', (c: Buffer) => (body += c.toString()));
-      req.on('end', () => { got.push(JSON.parse(body) as Record<string, string>); res.writeHead(204).end(); });
-    });
-    await new Promise<void>((r) => makers.listen(0, '127.0.0.1', r));
-    const u = await startAligner({ headless: false, repos: { [REPO]: await readFolder(TIDY) }, env: { ALIGNER_USAGE_STATS: `http://127.0.0.1:${(makers.address() as AddressInfo).port}/api/usage` } });
-    try {
-      const pat = client(u.url);
-      await pat.go(`${u.url}/auth/login`);
-      expect((await pat.rpc<{ usageStats: boolean }>('account')).result!.usageStats).toBe(true);
-      await pat.rpc('account'); // opened again the same day
-      await pat.rpc('snapshot', REF);
-      await pat.rpc('edit', { ...REF, op: { op: 'modify', id: 'VI-FOR', fields: { text: 'people who share a house' } } });
-      await pat.rpc('edit', { ...REF, op: { op: 'modify', id: 'FL-001', fields: { name: 'Tick off a chore' } } });
-      await pat.rpc('edit', { ...REF, op: { op: 'modify', id: 'FL-001', fields: { name: 'Finish a chore' } } });
-      await pat.rpc('commit', { ...REF, message: 'Houses too' });
-      await pat.rpc('commit', REF); // nothing left to commit
-      // The coding agent builds it, and pushes the product context it updated.
-      u.github.push(REPO, 'main', { 'product/product.md': u.github.file(REPO, 'main', 'product/product.md')!.replace('mobile chore planner', 'chore planner for phones') }, 'Build it');
-      await until(async () => { await pat.rpc('status', REF); return got.some((e) => e.event === 'push'); }, 'the push counted');
-      await until(() => got.length >= 5, 'all of them sent');
-      expect(got.map((e) => e.event).sort()).toEqual(['commit', 'flows', 'open', 'product', 'push']);
-      for (const e of got) {
-        expect(Object.keys(e).sort()).toEqual(['aligner', 'event', 'pm', 'version']);
-        expect(e).toMatchObject({ aligner: got[0]!.aligner, pm: got[0]!.pm, version: VERSION });
-      }
-      expect(got[0]!.aligner).toMatch(/^[0-9a-f]{16}$/);
-      expect(got[0]!.pm).toMatch(/^[0-9a-f]{16}$/);
-      const sent = JSON.stringify(got);
-      for (const telling of ['pat', 'tidy', 'main', 'house', 'chore', u.github.app!.clientId]) expect(sent.toLowerCase()).not.toContain(telling.toLowerCase());
-    } finally {
-      await u.close();
-      await new Promise<void>((r) => makers.close(() => r()));
-    }
   });
 });

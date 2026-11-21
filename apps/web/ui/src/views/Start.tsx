@@ -8,9 +8,6 @@ import { Button, cx } from '../components/ui';
 import { Popover } from '../components/edit';
 import { GitHubMark } from '../components/icons';
 
-/** What Aligner's usage statistics hold, and how to turn them off. */
-const USAGE_STATS = 'https://github.com/productalignment/aligner/blob/main/docs/usage-statistics.md';
-
 type Setup = Extract<Account, { stage: 'setup' }>;
 type Ready = Extract<Account, { stage: 'ready' }>;
 
@@ -70,7 +67,6 @@ export function Setup({ account, error, onCheck }: { account: Setup; error: stri
             {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
           </button>
         </div>
-        <p data-usage-note className="mt-4 text-[13px] text-neutral-500">Aligner also shares anonymous usage statistics with its makers: which parts you use and how often you commit, never your name, your repositories or what they hold. To share none, add the line <code className="rounded bg-neutral-100 px-1 font-mono text-[12px]">ALIGNER_USAGE_STATS=off</code> too. <a href={USAGE_STATS} target="_blank" rel="noreferrer" className="underline decoration-neutral-300 underline-offset-2 hover:text-neutral-900">What it shares</a></p>
         <p className="mt-4 text-[13px] text-neutral-400">Aligner restarts with them in a minute or two, and this page goes on to signing in. Keep these lines to yourself: they are the app's password.</p>
       </Card>
     );
@@ -162,11 +158,6 @@ export function AccountMenu({ host, account }: { host: Host; account: Ready }) {
           </div>
           <a href={account.install} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-[13px] text-neutral-700 hover:bg-neutral-50"><Settings2 className="size-3.5" /> Choose the repositories Aligner opens</a>
           <button data-sign-out onClick={() => void host.signOut().finally(() => location.assign('/'))} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[13px] text-neutral-700 hover:bg-neutral-50"><LogOut className="size-3.5" /> Sign out</button>
-          {account.usageStats && (
-            <p data-usage-stats className="mx-2 mt-1 border-t border-neutral-100 pt-2 text-[11px] leading-snug text-neutral-400">
-              Aligner shares anonymous usage statistics with its makers: what you use, never your name, your repositories or what they hold. <a href={USAGE_STATS} target="_blank" rel="noreferrer" className="underline decoration-neutral-300 underline-offset-2 hover:text-neutral-700">What, and how to turn it off</a>
-            </p>
-          )}
         </Popover>
       )}
     </span>

@@ -113,9 +113,9 @@ export type Account =
   /**
    * Signed in; `install` is where the PM chooses the repositories Aligner can open. `durable`: drafts
    * outlive a restart of Aligner (it has a volume). `version` is this Aligner's, and `update` says
-   * when a newer one is out. `usageStats`: Aligner shares anonymous usage statistics with its makers.
+   * when a newer one is out.
    */
-  | { stage: 'ready'; user: User; install: string; durable: boolean; version: string; usageStats: boolean; update?: Update };
+  | { stage: 'ready'; user: User; install: string; durable: boolean; version: string; update?: Update };
 
 /** A newer version of Aligner: what it brings, and the PM's copy of Aligner, which one click brings up to date. */
 export interface Update { version: string; notes: string[]; copy?: string }

@@ -10,7 +10,6 @@ import { touchIcon, uiHtml } from './extras.ts';
 import { GitHub, GitHubError, convertManifest, exchange, revoke, type CreatedApp, type GitHubUrls, type Tokens } from './github.ts';
 import { PRODUCT_METHODS, Products, type ProductMethod, type Viewer } from './handlers.ts';
 import type { Updates } from './updates.ts';
-import type { Usage } from './usage.ts';
 
 export interface ServerOptions {
   github: GitHubUrls;
@@ -19,8 +18,6 @@ export interface ServerOptions {
   /** Where the PM's drafts are kept, and whether that outlives a restart (a volume). */
   data: { dir: string; durable: boolean };
   updates: Updates;
-  /** Where what the PMs do is counted for Aligner's makers; none when the PM turned it off. */
-  usage?: Usage;
 }
 
 export interface AlignerServer {
@@ -33,7 +30,7 @@ interface Session extends Tokens { login: string }
 export async function startServer(opts: ServerOptions, port: number, host = '0.0.0.0'): Promise<AlignerServer> {
   const { github, app } = opts;
   const sealer = app && new Sealer(app.clientSecret);
-  const products = new Products(opts.data.dir, opts.usage);
+  const products = new Products(opts.data.dir);
   /** Each PM's latest token: the products they have open reach GitHub with it. */
   const viewers = new Map<string, { token: string; viewer: Viewer }>();
   /** Refreshes under way or just done, by refresh token: requests that come together share one. */
@@ -149,10 +146,9 @@ export async function startServer(opts: ServerOptions, port: number, host = '0.0
     });
     if (!user) return { stage: 'signin' };
     const update = await opts.updates.check(viewer.gh);
-    products.count(viewer, 'open');
     return {
       stage: 'ready', user: { login: user.login, name: user.name, avatar: user.avatar_url }, install: `${github.web}/apps/${app.slug}/installations/new`,
-      durable: opts.data.durable, version: opts.updates.version, usageStats: !!opts.usage, ...(update ? { update } : {}),
+      durable: opts.data.durable, version: opts.updates.version, ...(update ? { update } : {}),
     };
   }
 

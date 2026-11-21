@@ -29,14 +29,13 @@ The vision, the out-of-scope list, the constraints, the personas and their jobs 
   - `apps/web`: the server (`src/`: setting up and signing in with GitHub, the branch store and the drafts, the RPC handlers, the product's look, updates), the UI (`ui/`), the e2e tests with their stand-in for GitHub (`e2e/github.ts`), and the scripts (`dev`, `screenshots`, `validate`).
 - **A release** raises `version` in `apps/web/package.json` and adds its entry at the top of `CHANGELOG.md`, in plain words for PMs: what the version brings them (a test keeps the two in step). Once it is on `main`, every PM's Aligner shows it and offers **Update now**. Keep `main` releasable: their forks take it as it is.
 - The format is described in `product/INSTRUCTIONS.md`, which Aligner copies into every product; keep it in step with `packages/core/src/context/spec.ts`. Aligner brings an older `INSTRUCTIONS.md` or instruction block it shipped up to date with the PM's next commit: when you change either, add its new git blob SHA to `SHIPPED` in `apps/web/src/extras.ts` (a test checks). `examples/tidy/` is the example product the tests use.
-- Docs: `docs/architecture.md` (how Aligner works; keep it in step with the code), `docs/install.md` (deploying Aligner on Railway) and `docs/usage-statistics.md` (what Aligner tells its makers).
+- Docs: `docs/architecture.md` (how Aligner works; keep it in step with the code) and `docs/install.md` (deploying Aligner on Railway).
 - Before pushing, run from the repo root:
   - `npm test` (the `aligner` app tests build it first),
   - `npm run typecheck`,
   - `npm run validate -- .` (this repo's own product context) and `npm run validate -- examples/tidy`,
   - after UI changes, `npm run e2e`, which drives the UI in Chromium against the built server and the stand-in for GitHub (`ALIGNER_E2E_CHANNEL=chrome` uses the installed Google Chrome when Playwright's browser isn't installed).
 - `npm run screenshots` captures the views into `docs/screenshots/` and this repo's own screens into `product/screens/`. `npm run dev -- [folder…]` builds and runs Aligner with those folders (by default the example and this repo) as repositories on the stand-in for GitHub, and prints the link that signs you in.
-- **Usage statistics** (`apps/web/src/usage.ts`): Aligner tells its makers what PMs do, as counts, never a name, a login, a repository, a branch or anything in one. `docs/usage-statistics.md` lists every event and field: keep it in step, and say in the changelog what a version changes in them. Tests and scripts run with `ALIGNER_USAGE_STATS=off`, or a receiver of their own.
 - The UI must stay one self-contained HTML file. Screen pictures travel as data URLs through the `picture` RPC.
 - No IDs in the UI: show names, shapes, colours and pictures; an item's ID may appear only in a hover title.
 - The parser must stay lossless. Any change to `packages/core/src/context` keeps the round-trip property test passing.
