@@ -17,7 +17,7 @@ On GitHub, open [productalignment/aligner](https://github.com/productalignment/a
 
 ## 3. Connect it to GitHub
 1. Open your Aligner's address and choose **Create the app on GitHub**. GitHub shows the app Aligner asks for: it may read and change the files of the repositories you choose for it, and nothing else. Choose **Create GitHub App**. If your products' repositories belong to an organization, choose **Are your repositories in an organization?** first and give its name: the app is then created there, which needs you to be one of its owners.
-2. Back in Aligner, copy the three lines it shows. In Railway, open your service's **Variables**, choose **Raw Editor**, paste them, choose **Update Variables**, then **Deploy**. Keep the lines to yourself: they are the app's password.
+2. Back in Aligner, copy the three lines it shows. In Railway, open your service's **Variables**, choose **Raw Editor**, paste them, choose **Update Variables**, then **Deploy**. Keep the lines to yourself: they are the app's password. Aligner shares anonymous usage statistics with its makers ([what it shares](usage-statistics.md)): to share none, add a fourth line, `ALIGNER_USAGE_STATS=off`.
 3. A minute or two later, the Aligner page asks you to **Sign in with GitHub**. Sign in, then choose **Choose repositories** and pick your products' repositories, the way you gave Railway access to yours. Pick your copy of Aligner too, so that it can update itself.
 
 ![Give the app to Railway](screenshots/setup/2-give-the-app-to-railway.png)

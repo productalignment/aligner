@@ -2,6 +2,9 @@
 
 Each version of Aligner, in plain words. Your Aligner reads this page to tell you what a new version brings, and offers to update itself.
 
+## 1.1.0
+- Your Aligner now tells its makers, anonymously, how much it's used: on which days you open it, which parts you change and how often you commit, so we can see what helps and what to make better. Never your name, your repositories or anything in them. To share none, add the variable ALIGNER_USAGE_STATS with the value off to your Aligner in Railway. Everything it shares is listed in docs/usage-statistics.md, on GitHub.
+
 ## 1.0.0
 - Aligner is open source: your own copy runs on Railway, and you open it from any computer or your phone. Sign in with GitHub, pick a repository and a branch, and edit your product's context, with no IDs and no forms.
 - Write the vision, with what's out of scope and the constraints; your personas, with what they want, their pains and their context; and the jobs they hire your product for, each in the When / I want to / so I can template, with a short name.

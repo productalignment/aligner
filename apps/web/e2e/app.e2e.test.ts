@@ -826,6 +826,7 @@ describe('starting a product', () => {
 describe('signing out', () => {
   it('signs out, back to signing in with GitHub', async () => {
     await page.locator('[data-account]').click();
+    expect(await page.locator('[data-usage-stats]').count()).toBe(0); // turned off
     await page.locator('[data-sign-out]').click();
     await page.locator('[data-sign-in]').waitFor();
     await page.locator('[data-sign-in]').click();
@@ -848,8 +849,22 @@ describe('setting Aligner up', () => {
       await first.locator('[data-variables]').waitFor();
       const app = fresh.github.app!;
       expect((await first.locator('[data-variables]').innerText()).trim()).toBe(`GITHUB_APP_SLUG=${app.slug}\nGITHUB_CLIENT_ID=${app.clientId}\nGITHUB_CLIENT_SECRET=${app.clientSecret}`);
+      expect(await first.locator('[data-usage-note]').innerText()).toContain('ALIGNER_USAGE_STATS=off');
     } finally {
       await fresh.close();
+    }
+  });
+});
+
+describe('usage statistics', () => {
+  it('the account menu says when Aligner shares them, and links to what they hold', async () => {
+    const u = await startAligner({ env: { ALIGNER_USAGE_STATS: 'http://127.0.0.1:9/api/usage' } }); // nobody listens there
+    try {
+      const first = await u.open('/');
+      await first.locator('[data-account]').click();
+      expect(await first.locator('[data-usage-stats] a').getAttribute('href')).toContain('docs/usage-statistics.md');
+    } finally {
+      await u.close();
     }
   });
 });

@@ -45,6 +45,7 @@ export async function startAligner(opts: HarnessOptions = {}): Promise<Harness> 
   const data = mkdtempSync(join(tmpdir(), 'aligner-data-'));
   const env: Record<string, string> = {
     PATH: process.env.PATH ?? '', PORT: '0', GITHUB_URL: github.web, GITHUB_API_URL: github.api, ALIGNER_DATA: data,
+    ALIGNER_USAGE_STATS: 'off', // never productalignment.org: a test that counts gives a URL of its own
     ...(app ? { GITHUB_APP_SLUG: app.slug, GITHUB_CLIENT_ID: app.clientId, GITHUB_CLIENT_SECRET: app.clientSecret } : {}),
     ...opts.env,
   };

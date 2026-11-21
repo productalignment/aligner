@@ -91,14 +91,24 @@ export class BranchStore implements ProductStore {
 
   /**
    * Takes in the branch's latest commit when someone else pushed to it, asking GitHub at most every
-   * couple of seconds (an unchanged answer costs nothing), and moves the draft onto it.
+   * couple of seconds (an unchanged answer costs nothing), and moves the draft onto it. True when the
+   * push changed the product context: the coding agent's, usually, having built what the PM asked for.
    */
-  async refresh(): Promise<void> {
-    if (!this.head || Date.now() - this.checkedAt < CHECK_EVERY) return void (await this.current());
+  async refresh(): Promise<boolean> {
+    if (!this.head || Date.now() - this.checkedAt < CHECK_EVERY) {
+      await this.current();
+      return false;
+    }
     const remote = await this.fetchRemote();
-    if (remote.commit === this.head.commit) return;
+    if (remote.commit === this.head.commit) return false;
     const next = await this.load(remote);
-    await this.exclusive(async () => { if (this.remote === remote && this.head!.commit !== remote.commit) await this.moveOnto(next); });
+    let changed = false;
+    await this.exclusive(async () => {
+      if (this.remote !== remote || this.head!.commit === remote.commit) return;
+      changed = [...new Set([...this.head!.files.keys(), ...next.files.keys()])].some((p) => p.startsWith(`${CONTEXT_DIR}/`) && this.head!.files.get(p) !== next.files.get(p));
+      await this.moveOnto(next);
+    });
+    return changed;
   }
 
   /** Commits the draft to the branch, as one commit on top of its latest one, with the PM's message. */

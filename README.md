@@ -34,6 +34,10 @@ The step-by-step guide: [`docs/install.md`](docs/install.md).
 - **Aligner's own product context** (dogfooding): `product/` · **Example product:** `examples/tidy/`
 - **How it's built:** [`docs/architecture.md`](docs/architecture.md)
 
+## Usage statistics
+
+Your Aligner tells its makers, anonymously, how much it's used: on which days people open it, which parts they change, and how often they commit. Never names, repositories or anything in them. What it sends, and how to turn it off with one variable: [`docs/usage-statistics.md`](docs/usage-statistics.md).
+
 ## Contributing
 
 Issues and pull requests are welcome: see [`CONTRIBUTING.md`](CONTRIBUTING.md) and our [code of conduct](CODE_OF_CONDUCT.md). To report a security issue, see [`SECURITY.md`](SECURITY.md).

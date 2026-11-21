@@ -6,6 +6,7 @@ import { draftFolder } from './drafts.ts';
 import { BLOCK_BEGIN, contextExtras, updateExtras } from './extras.ts';
 import type { GitHub } from './github.ts';
 import { readTheme, untar } from './theme.ts';
+import { partOf, type Usage, type UsageEvent } from './usage.ts';
 
 /** The signed-in PM, with GitHub as them. */
 export interface Viewer { login: string; gh: GitHub }
@@ -20,8 +21,8 @@ export class Products {
   private readonly themes = new Map<string, Promise<ProductTheme>>();
   private readonly sweeper: ReturnType<typeof setInterval>;
 
-  /** `drafts`: the folder the PMs' drafts are kept in. */
-  constructor(private readonly drafts: string) {
+  /** `drafts`: the folder the PMs' drafts are kept in. `usage`: where what PMs do is counted, unless the PM turned it off. */
+  constructor(private readonly drafts: string, private readonly usage?: Usage) {
     // A product nobody has looked at for a while is let go; its draft stays in the data folder.
     this.sweeper = setInterval(() => {
       for (const [key, o] of this.open) if (Date.now() - o.store.usedAt > IDLE) this.open.delete(key);
@@ -58,6 +59,7 @@ export class Products {
     const name = branchName(p.name);
     await this.product(v, p).store.branchOff(name, draftFolder(this.drafts, v.login, repo, name));
     this.open.delete(`${v.login}\n${repo}\n${name}`);
+    this.count(v, 'branch');
     return name;
   };
 
@@ -69,18 +71,25 @@ export class Products {
     const { files, blocks } = contextExtras();
     await session.init(files, { blocks, marker: BLOCK_BEGIN });
     await store.commit('Add the product context');
+    this.count(v, 'start');
     return session.snapshot();
   };
 
-  edit = (v: Viewer, p: Ref & { op: EditOp }) => this.product(v, p).session.edit(p.op);
+  edit = async (v: Viewer, p: Ref & { op: EditOp }) => {
+    const done = await this.product(v, p).session.edit(p.op);
+    this.count(v, partOf(p.op));
+    return done;
+  };
   setPicture = (v: Viewer, p: Ref & { screenId: string; fileName: string; dataBase64: string }) =>
-    this.product(v, p).session.setPicture(String(p.screenId), String(p.fileName), Buffer.from(String(p.dataBase64), 'base64'));
+    this.counted(v, 'screens', this.product(v, p).session.setPicture(String(p.screenId), String(p.fileName), Buffer.from(String(p.dataBase64), 'base64')));
   picture = (v: Viewer, p: Ref & { path: string }) => this.product(v, p).session.picture(String(p.path));
-  saveLayout = (v: Viewer, p: Ref & { of: string; layout: Layout | null }) => this.product(v, p).session.saveLayout(String(p.of), p.layout ?? null);
-  saveLines = (v: Viewer, p: Ref & { of: string; lines: Lines }) => this.product(v, p).session.saveLines(String(p.of), p.lines ?? {});
+  saveLayout = (v: Viewer, p: Ref & { of: string; layout: Layout | null }) =>
+    this.counted(v, p.of === 'screens' ? 'screens' : 'flows', this.product(v, p).session.saveLayout(String(p.of), p.layout ?? null));
+  saveLines = (v: Viewer, p: Ref & { of: string; lines: Lines }) =>
+    this.counted(v, p.of === 'screens' ? 'screens' : 'flows', this.product(v, p).session.saveLines(String(p.of), p.lines ?? {}));
   markup = (v: Viewer, p: Ref & { screenId: string }) => this.product(v, p).session.markup(String(p.screenId));
   saveMockup = (v: Viewer, p: Ref & { screenId: string; markup: Markup; pngBase64: string }) =>
-    this.product(v, p).session.saveMockup(String(p.screenId), p.markup, Buffer.from(String(p.pngBase64 ?? ''), 'base64'));
+    this.counted(v, 'mockups', this.product(v, p).session.saveMockup(String(p.screenId), p.markup, Buffer.from(String(p.pngBase64 ?? ''), 'base64')));
 
   /** The product's look, read from the code on its branch; once per commit. */
   theme = async (v: Viewer, p: Ref): Promise<ProductTheme> => {
@@ -100,7 +109,7 @@ export class Products {
   /** What the UI polls: the version of the files (the coding agent's pushes show up), and the PM's draft. */
   status = async (v: Viewer, p: Ref): Promise<DraftStatus> => {
     const { store } = this.product(v, p);
-    await store.refresh();
+    if (await store.refresh()) this.count(v, 'push');
     const notice = store.notice;
     store.notice = undefined;
     return { version: await store.version(), changes: store.changes, ...(notice ? { notice } : {}) };
@@ -109,8 +118,10 @@ export class Products {
   /** The draft, committed with the coding agent's instructions brought up to date. */
   commit = async (v: Viewer, p: Ref & { message?: unknown }) => {
     const { session, store } = this.product(v, p);
-    if (store.changes) await updateExtras(store);
+    const changes = store.changes;
+    if (changes) await updateExtras(store);
     await store.commit(String(p.message ?? ''));
+    if (changes) this.count(v, 'commit');
     return session.snapshot();
   };
 
@@ -122,6 +133,17 @@ export class Products {
 
   close() {
     clearInterval(this.sweeper);
+  }
+
+  /** Counts what the PM did, for Aligner's makers (src/usage.ts). */
+  count(v: Viewer, event: UsageEvent) {
+    this.usage?.record(v.login, event);
+  }
+
+  private async counted<T>(v: Viewer, event: UsageEvent, work: Promise<T>): Promise<T> {
+    const done = await work;
+    this.count(v, event);
+    return done;
   }
 
   private product(v: Viewer, p: Ref): Open {
